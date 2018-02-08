@@ -25,6 +25,31 @@
           <ocean-eye-bubbles-audio></ocean-eye-bubbles-audio>
         </template>
       </demo-snippet>
+      <h3>Basic ocean-eye-bubbles-audio demo with dictionary</h3>
+      <demo-snippet>
+        <template>
+          <style>
+            #second {
+              --button-position: center;
+            }
+          </style>
+          <ocean-eye-bubbles-audio id="second"></ocean-eye-bubbles-audio>
+          <script>
+            document.querySelector('#second').dictionary = [
+              {
+                trigger: 'marketing view',
+                event: 'marketing-view',
+                answer: 'Showing the marketing view'
+              },
+              {
+                trigger: 'vision',
+                event: 'vision-view',
+                answer: 'Showing the vision of the startup idea'
+              }
+            ]
+          </script>
+        </template>
+      </demo-snippet>
     </div>
   </body>
 </html>
