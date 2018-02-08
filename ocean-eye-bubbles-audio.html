@@ -1,0 +1,144 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../obvi/voice-button.html">
+<link rel="import" href="../paper-toast/paper-toast.html">
+
+<dom-module id="ocean-eye-bubbles-audio">
+  <template>
+    <style>
+      :host {
+        display: block;
+        text-align: var(--button-position, right);
+      }
+      voice-button {
+      	--button-diameter: 60px;
+      	--mic-color: #fbfbfb;
+      	--text-color: navy;
+      	--button-color: navy;
+      	--circle-viz-color: #333;
+      }
+      paper-toast {
+        text-align: left;
+      }
+    </style>
+    <voice-button
+        id="voiceButton"
+        flat
+        autodetect
+        cloud-speech-api-key="[[apiKey]]"
+        click-for-permission="true"></voice-button>
+    <paper-toast id="toast" text="How can I help you?"></paper-toast>
+  </template>
+
+  <script>
+    /**
+     * `ocean-eye-bubbles-audio`
+     * Audio interface, command voice for Startup Radiator dashboard
+     *
+     * @customElement
+     * @polymer
+     * @demo demo/index.html
+     */
+    class OceanEyeBubblesAudio extends Polymer.Element {
+      static get is() { return 'ocean-eye-bubbles-audio' }
+      static get properties() {
+        return {
+          /**
+           * Audio listener cloud-speech-api-key
+           * as required by obvi/voice-button component
+           * initialized as empty
+           */
+          apiKey: {
+            type: String,
+            value: ''
+          },
+          /**
+           * Dictionary of commands recognised with associated callbacks
+           *
+           * Dictionary structure:
+           * [
+           *  {
+           *   trigger: "marketing view", // needle for speech recognition
+           *   event: "marketing-view", // custom event to be fired
+           *   answer: "Showing the marketing view" // description for toast
+           *  }
+           * ]
+           */
+          dictionary: {
+            type: Array,
+            notify: true,
+            reflectToAttribute: true,
+            value: () => []
+          },
+          /**
+           * Store chat messagges conversation
+           *
+           * Chat object format:
+           * {
+           *  msg: !String message content
+           *  isOcean: Boolean true if is an automatic response by the component
+           * }
+           * @note isOcean property might be missing on chat messagges generated
+           *       by user through the voice-button
+           */
+          chat: {
+            type: Array,
+            notify: true,
+            reflectToAttribute: true,
+            value: () => [{msg: 'How can I help you?', isOcean: true}]
+          },
+        }
+      }
+      ready() {
+        super.ready()
+        // voice-button event listener - listen for speech event
+        this.$.voiceButton.addEventListener('onSpeech', (event) => {
+          if (event.detail.isFinal) {
+            const question = event.detail.speechResult
+            // store user question in chat
+            this.chat.unshift({msg: question})
+            // evaluate voice text
+            const answer = this.askOcean(question)
+            // toast ocean answer
+            this.$.toast.text = answer
+            this.$.toast.open()
+            // store answer in chat
+            this.chat.unshift({msg: answer, isOcean: true})
+          }
+        })
+      }
+      /**
+       * Ask Something to Ocean Eye
+       *
+       * @param String question
+       * @return String answer
+       */
+      askOcean (question) {
+        if (this.dictionary.length<1) return '😿'
+        // evaluate dictionary triggers on question
+        for (let i = 0; i < this.dictionary.length; i++) {
+          if (question.toLowerCase().indexOf(this.dictionary[i].trigger.toLowerCase()) > -1) {
+            return this._evalCommand(this.dictionary[i])
+          }
+        }
+        return '🐙'
+      }
+      /**
+       * Evaluate Ocean action
+       * Trigger required custom event
+       * finally return dictionary action answer
+       *
+       * @param Object dictionary element
+       * @return String dictionary element answer
+       */
+      _evalCommand (item) {
+        this.dispatchEvent(new CustomEvent(item.event, {
+          bubbles: true, composed: true, detail: { item: item }
+        }))
+        return item.answer
+      }
+
+    }
+
+    window.customElements.define(OceanEyeBubblesAudio.is, OceanEyeBubblesAudio);
+  </script>
+</dom-module>

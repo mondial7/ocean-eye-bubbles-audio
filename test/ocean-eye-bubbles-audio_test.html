@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>ocean-eye-bubbles-audio test</title>
+
+    <script src="../../webcomponentsjs/webcomponents-loader.js"></script>
+    <script src="../../web-component-tester/browser.js"></script>
+
+    <link rel="import" href="../ocean-eye-bubbles-audio.html">
+  </head>
+  <body>
+
+    <test-fixture id="Basic">
+      <template>
+        <ocean-eye-bubbles-audio></ocean-eye-bubbles-audio>
+      </template>
+    </test-fixture>
+
+    <test-fixture id="KeyProperty">
+      <template>
+        <ocean-eye-bubbles-audio api-key="my-key"></ocean-eye-bubbles-audio>
+      </template>
+    </test-fixture>
+
+    <test-fixture id="Dictionary">
+      <template>
+        <ocean-eye-bubbles-audio dictionary='[
+          {
+            "trigger": "marketing view",
+            "event": "marketing-view",
+            "answer": "Showing the marketing view"
+          }
+        ]'></ocean-eye-bubbles-audio>
+      </template>
+    </test-fixture>
+
+    <script>
+      suite('ocean-eye-bubbles-audio', () => {
+
+        test('instantiating the element with default properties works', () => {
+          let Basic = fixture('Basic');
+          assert.equal(Basic.dictionary.length, 0);
+          assert.equal(Basic.apiKey, '');
+          const elementShadowRoot = Basic.shadowRoot;
+          const toast = elementShadowRoot.getElementById('toast');
+          assert.equal(toast.text, 'How can I help you?');
+        });
+
+        test('setting api-key attribute works with upstream blocked', () => {
+          let KeyProperty = fixture('KeyProperty');
+          assert.equal(KeyProperty.apiKey, 'my-key');
+          const button = KeyProperty.shadowRoot.querySelector('voice-button');
+          button.cloudSpeechApiKey = 'dynamic-assigned-key';
+          assert.equal(KeyProperty.apiKey, 'my-key');
+        });
+
+        test('setting dictionary attribute works', () => {
+          let Dictionary = fixture('Dictionary');
+          assert.equal(Dictionary.dictionary.length, 1);
+          assert.equal(Dictionary.dictionary[0].trigger, 'marketing view');
+          assert.equal(Dictionary.dictionary[0].event, 'marketing-view');
+          assert.equal(Dictionary.dictionary[0].answer, 'Showing the marketing view');
+        });
+
+        test('askOcean has default answer with empty dictionary', () => {
+          let Basic = fixture('Basic');
+          assert.equal(Basic.dictionary.length, 0);
+          assert.equal(Basic.askOcean('Do you like cats?'),'😿')
+        });
+
+        test('askOcean has default answer with non-empty dictionary', () => {
+          let Dictionary = fixture('Dictionary');
+          assert.equal(Dictionary.askOcean('Do you like cats?'),'🐙')
+        });
+
+        test('askOcean should answer according to dictionary', () => {
+          let Dictionary = fixture('Dictionary');
+          assert.equal(Dictionary.askOcean('Can you show me the marketing view?'),'Showing the marketing view')
+        });
+
+        test('askOcean should trigger a custom-event according to dictionary', (done) => {
+          let Dictionary = fixture('Dictionary');
+          Dictionary.addEventListener('marketing-view', (event) => {
+            assert.equal(event.detail.item.trigger, 'marketing view');
+            done();
+          });
+          Dictionary.askOcean('Can you show me the marketing view?');
+        });
+
+      });
+    </script>
+
+  </body>
+</html>
